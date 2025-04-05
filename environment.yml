@@ -1,6 +1,6 @@
 name: in-context-learning
 channels:
-  - pytorch
+  - https://conda.anaconda.org/pytorch
   - defaults
 dependencies:
   - pip=21.2.4
