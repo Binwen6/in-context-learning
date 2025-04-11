@@ -1,0 +1,39 @@
+\section*{Investigation Overview}
+\textbf{Function Classes} Building upon the function classes studied in Garg et al., 2023\cite{garg2023transformerslearnincontextcase}, which investigates transformers' in-context learning (ICL) capabilities on linear functions, sparse linear functions, decision trees, and two-layer neural networks, we explore additional function classes to further probe transformer performance. Subsequent research has broadened the scope of ICL beyond simple functions, investigating applications in diverse domains such as time-dependent and structured functions (e.g., linear dynamical systems; Cole et al., 2025 \cite{cole2025incontextlearninglineardynamical}), discrete function classes (e.g., Boolean functions; Bhattamishra et al., 2023 \cite{bhattamishra2023understandingincontextlearningtransformers}), and nonlinear regression tasks (e.g., polynomial kernel regression; Sun et al., 2025 \cite{sun2025incontextlearningpolynomialkernel}). Further studies have also explored single-index models (Oko et al., 2024 \cite{oko2024pretrainedtransformerefficientlylearns}) and partial differential equations (Cole et al., 2024 \cite{cole2024provable}), reflecting an increasing interest in understanding how transformers generalize across different functional classes.\\\textbf{Models}    Past studies about in-context learning in simple functions using Transformers and their variants. 
+We also investigate some other architectures.
+Mamba 2\cite{dao2024transformersssmsgeneralizedmodels} uses state-space models (SSMs) with selective state transitions, enabling dynamic parameter adjustments based on input content.  
+Its pretraining achieves Transformer-comparable language modeling performance, which may suggest foundational token-level knowledge retention critical for in-context learning. 
+\\\textbf{Data Generation}
+Synthetic datasets are tailored to specific tasks to isolate and analyze learning mechanisms. And tasks vary in complexity\cite{oko2024pretrainedtransformerefficientlylearns}, enabling the evaluation of transformers’ generalization capabilities. 
+Train-test splits enforce disjoint support domains or introduce distribution shifts\cite{garg2023transformerslearnincontextcase} to validate generalization to unseen distributions.
+
+\section*{Code Base}
+
+In this work, we propose to investigate two additional function classes —- Gaussian kernel functions and nonlinear dynamical systems—that have not been extensively studied in the context of ICL. Using linear functions as our baseline, we aim to evaluate transformers’ generalization ability across these more complex function classes, thereby showing both their potential and limitations in in-context learning.
+\\
+As the foundation of our implementation, we will build upon the official codebase from Garg et al., 2023\cite{garg2023transformerslearnincontextcase} (\href{https://github.com/dtsip/in-context-learning}{GitHub: dtsip/in-context-learning}). This repository provides a well-structured experimental pipeline for evaluating transformer performance on various simple function classes (e.g., linear functions, sparse linear functions). Specifically, we will reuse its core components for data generation, in-context learning (ICL) evaluation, and transformer model training. Our contribution will extend this framework by incorporating additional function classes, such as Gaussian kernel functions and nonlinear dynamical systems, to assess generalization capabilities further more.
+\\
+In addition, to compare architectural performance, we will implement the Mamba2 model (a structured state-space model, or SSM) using its official codebase (\href{https://github.com/big-data-ai/mamba2}{GitHub: big-data-ai/mamba2}). We will utilize only the model architecture from this repository—without relying on pretrained weights—so that both Mamba2 and the transformer models can be trained and evaluated under consistent ICL settings. This architectural comparison aims to assess whether SSM-based models exhibit any advantages or limitations over transformers in few-shot function learning tasks.
+\\
+We will also include additional transformer-based architectures such as FlashAttention and Hyena to evaluate architectural differences in ICL performance. FlashAttention, which optimizes attention computation with kernel fusion techniques, will be implemented using the official repository \href{https://github.com/Dao-AILab/flash-attention}{(GitHub: Dao-AILab/flash-attention)}. Hyena, an alternative sequence model architecture with implicit long-range interaction mechanisms, will be adapted from the open-source repository at \href{https://github.com/hazyresearch/safari}{(GitHub: hazyresearch/safari)}. These models will be trained and evaluated under consistent experimental settings.
+
+\section*{Data Generation}
+
+We plan to evaluate the in-context learning capabilities of Transformers on three distinct function classes: linear functions, Gaussian kernel functions, and nonlinear dynamical systems. A synthetic dataset will be constructed for each function class, consisting of 10,000 training prompts and 1,000 test prompts. Each prompt will contain 20 context examples and 1 query point. 
+Specifically, we will sample a random function from the class according to the distribution over functions, then create 20 random inputs independently, and finally evaluate the function on these inputs to produce the prompt. 
+And the distribution over functions with weight vectors are drawn from an isotropic Gaussian while the input distribution are an isotropic Gaussian in 20 dimensions.
+\\The data generation methods for each class are as follows: 
+\begin{itemize}
+    \item Linear functions follow the setup in paper\cite{garg2023transformerslearnincontextcase}, where inputs are sampled from a standard normal distribution, and we will use normalized weights and add Gaussian noise.
+    \item Gaussian kernel functions compute exponentially decaying values based on either fixed or randomly sampled centers. 
+    \item Nonlinear dynamical systems generate time series data by iteratively evolving from an initial state using a predefined nonlinear update rule. 
+\end{itemize}
+\noindent We may introduce distribution shifts between prompts during training and inference and between the in-context examples and the query input during inference to ensure fair comparison with optimal estimators while balancing computational cost and generalization analysis.
+
+\section*{Resource Budget}
+\begin{itemize}
+    \item \textbf{Compute}:
+ We plan to use a single NVIDIA RTX 4090 GPU for approximately 30 GPU hours to support model training and evaluation on various function classes..
+    \item \textbf{Data}:
+ Synthetic datasets with ~10,000 unique functions per class, each with context-query pairs, ensuring diversity for ICL analysis.
+\end{itemize}

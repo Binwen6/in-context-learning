@@ -1,5 +1,0 @@
-wandb:
-    project: in-context-training
-    entity: your-entity
-    notes:
-    log_every_steps: 100

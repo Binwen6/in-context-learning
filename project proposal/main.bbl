@@ -1,0 +1,31 @@
+\begin{thebibliography}{1}
+
+\bibitem{bhattamishra2023understandingincontextlearningtransformers}
+Satwik Bhattamishra, Arkil Patel, Phil Blunsom, and Varun Kanade.
+\newblock Understanding in-context learning in transformers and llms by learning to learn discrete functions, 2023.
+
+\bibitem{cole2024provable}
+Frank Cole, Yulong Lu, Riley O'Neill, and Tianhao Zhang.
+\newblock Provable in-context learning of linear systems and linear elliptic pdes with transformers, 2024.
+
+\bibitem{cole2025incontextlearninglineardynamical}
+Frank Cole, Yulong Lu, Tianhao Zhang, and Yuxuan Zhao.
+\newblock In-context learning of linear dynamical systems with transformers: Error bounds and depth-separation, 2025.
+
+\bibitem{dao2024transformersssmsgeneralizedmodels}
+Tri Dao and Albert Gu.
+\newblock Transformers are ssms: Generalized models and efficient algorithms through structured state space duality, 2024.
+
+\bibitem{garg2023transformerslearnincontextcase}
+Shivam Garg, Dimitris Tsipras, Percy Liang, and Gregory Valiant.
+\newblock What can transformers learn in-context? a case study of simple function classes, 2023.
+
+\bibitem{oko2024pretrainedtransformerefficientlylearns}
+Kazusato Oko, Yujin Song, Taiji Suzuki, and Denny Wu.
+\newblock Pretrained transformer efficiently learns low-dimensional target functions in-context, 2024.
+
+\bibitem{sun2025incontextlearningpolynomialkernel}
+Haoyuan Sun, Ali Jadbabaie, and Navid Azizan.
+\newblock In-context learning of polynomial kernel regression in transformers with glu layers, 2025.
+
+\end{thebibliography}
