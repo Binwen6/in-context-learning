@@ -1,10 +1,10 @@
-This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.9.4)  10 APR 2025 17:32
+This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.9.4)  11 APR 2025 16:35
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"/Users/eureka/VSCodeProjects/Berkeley/Courses/CS/182/project/project proposal/main"
-(/Users/eureka/VSCodeProjects/Berkeley/Courses/CS/182/project/project proposal/main.tex
+**"/Users/eureka/VSCodeProjects/Berkeley/Courses/CS/182/project/in-context-learning/project proposal/main"
+(/Users/eureka/VSCodeProjects/Berkeley/Courses/CS/182/project/in-context-learning/project proposal/main.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
 (/usr/local/texlive/2024/texmf-dist/tex/latex/base/article.cls
@@ -665,11 +665,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
  ) 
 Here is how much of TeX's memory you used:
  24051 strings out of 474773
- 449984 string characters out of 5757725
+ 450044 string characters out of 5757725
  1931839 words of memory out of 5000000
  45804 multiletter control sequences out of 15000+600000
  586784 words of font info for 61 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 99i,10n,101p,1536b,467s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,10n,101p,1556b,467s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on main.pdf (3 pages).
