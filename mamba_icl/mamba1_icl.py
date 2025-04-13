@@ -1,32 +1,27 @@
 import torch
-from torch.cuda.amp import autocast
-import numpy as np
+from mamba_ssm import Mamba
 
-def evaluate(model, test_data, batch_size=32, device="cuda", context_size=20, d=20):
-    """评估固定上下文数量的误差"""
-    model.eval()
-    losses = []
-    with torch.no_grad():
-        for i in range(0, len(test_data), batch_size):
-            batch = test_data[i:i + batch_size]
-            flat_prompt_batch = torch.stack([flat_prompt for flat_prompt, _, _, _, _ in batch])
-            y_query_batch = torch.tensor([[y_query] for _, y_query, _, _, _ in batch], dtype=torch.float32).to(device)
-            X_batch = torch.stack([X[:context_size] for _, _, X, _, _ in batch])
-            Y_batch = torch.stack([Y[:context_size] for _, _, _, Y, _ in batch])
-            
-            with autocast():
-                input_seq = flat_prompt_batch.view(-1, 2*context_size+1, d+1).to(device)
-                output = model(input_seq, Y_batch)
-                loss = torch.nn.functional.mse_loss(output, y_query_batch)
-            losses.append(loss.item() * len(batch))
-        
-        return np.sum(losses) / len(test_data)
+class Mamba1ICL(torch.nn.Module):
+    def __init__(self, d_model=20, d_state=64, d_conv=4, expand=2):
+        super().__init__()
+        self.mamba = Mamba(d_model=d_model, d_state=d_state, d_conv=d_conv, expand=expand)
+        self.output_head = torch.nn.Linear(d_model, 1)
+        self.y_projection = torch.nn.Linear(1, d_model)
 
-def evaluate_with_varying_context(model, test_data, max_context=40, batch_size=32, device="cuda"):
-    """评估不同上下文数量的误差"""
-    errors = []
-    d = test_data[0][0].shape[-1] // (2*max_context + 1)  # 计算 d
-    for context_size in range(1, max_context + 1):
-        mse = evaluate(model, test_data, batch_size, device, context_size, d)
-        errors.append(mse)
-    return errors
+    def forward(self, x, y=None):
+        # 使用模型参数的设备
+        device = next(self.parameters()).device
+        x = x.to(device)  # 确保 x 在正确设备
+        if y is not None:
+            y = y.to(device)  # 确保 y 在正确设备
+            seq = []
+            for i in range(x.shape[1]):  # 20 上下文
+                seq.append(x[:, i, :])  # X_i: [batch, 20]
+                if i < y.shape[1]:  # Y_i: [batch]
+                    y_i = self.y_projection(y[:, i].unsqueeze(-1))  # [batch, 20]
+                    seq.append(y_i)
+            seq = torch.stack(seq, dim=1)  # [batch, 40, 20]
+            output = self.mamba(seq)[:, -1, :]  # 最后一个 Y_i 的输出
+        else:
+            output = self.mamba(x)[:, -1, :]
+        return self.output_head(output)
