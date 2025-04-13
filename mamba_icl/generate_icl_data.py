@@ -2,16 +2,18 @@ import torch
 import numpy as np
 
 def flatten_prompt(X, Y, x_query):
-    # 将 prompt 中的 (x_i, y_i) 拼接为一维序列，最后拼接 x_query
+    # 将 prompt 中的 (x_i, y_i) 拼接为交替序列，最后拼接 x_query
+    # 每对 (x_i, y_i) 展平为 [d+1]，x_query 填充为 [d+1]
     xy_pairs = [torch.cat([x, y.unsqueeze(0)]) for x, y in zip(X, Y)]  # 每对: [d+1]
-    sequence = torch.cat(xy_pairs + [x_query], dim=0)  # [context_size*(d+1) + d]
+    x_query_padded = torch.cat([x_query, torch.tensor([0.0])])  # [d+1]
+    sequence = torch.cat(xy_pairs + [x_query_padded])  # [(context_size+1)*(d+1)]
     return sequence
 
 def generate_linear_data(num_prompts, context_size=20, d=20):
     prompts = []
     for _ in range(num_prompts):
         w = torch.randn(d)
-        w = w / torch.norm(w)  # Normalized weights
+        w = w / torch.norm(w)
         X = torch.randn(context_size, d)
         Y = X @ w + torch.randn(context_size) * 0.01
         x_query = torch.randn(d)
