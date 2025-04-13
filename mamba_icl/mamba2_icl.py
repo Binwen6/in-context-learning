@@ -11,5 +11,3 @@ class Mamba2ICL(torch.nn.Module):
         x = self.mamba(x)
         return self.output_head(x)
 
-# Initialize model
-model = Mamba2ICL(d_model=20).to("cuda")
