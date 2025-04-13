@@ -2,15 +2,21 @@ import torch
 from torch.cuda.amp import autocast
 import numpy as np
 
-def evaluate(model, test_data):
+def evaluate(model, test_data, batch_size=32, device="cuda"):
     model.eval()
     losses = []
     with torch.no_grad():
-        for X, Y, x_query, y_query in test_data:
+        for i in range(0, len(test_data), batch_size):
+            batch = test_data[i:i + batch_size]
+            X_batch = torch.stack([X for X, _, _, _ in batch])  # [batch, 20, 20]
+            Y_batch = torch.stack([Y for _, Y, _, _ in batch])  # [batch, 20]
+            x_query_batch = torch.stack([x_query for _, _, x_query, _ in batch])  # [batch, 20]
+            y_query_batch = torch.tensor([[y_query] for _, _, _, y_query in batch], dtype=torch.float32).to(device)  # [batch, 1]
+            
             with autocast():
-                # 构造序列：20 个上下文 X + 1 个查询 x_query
-                input_seq = torch.cat([X, x_query.unsqueeze(0)], dim=0).to("cuda")  # [21, 20]
-                output = model(input_seq.unsqueeze(0))[:, -1, :]  # [1, 1]
-                loss = torch.nn.functional.mse_loss(output, torch.tensor([y_query], dtype=torch.float32).to("cuda"))
-            losses.append(loss.item())
-    return np.mean(losses)
+                input_seq = torch.cat([X_batch, x_query_batch.unsqueeze(1)], dim=1).to(device)  # [batch, 21, 20]
+                output = model(input_seq, Y_batch)  # [batch, 1]
+                loss = torch.nn.functional.mse_loss(output, y_query_batch)
+            losses.append(loss.item() * len(batch))
+        
+        return np.sum(losses) / len(test_data)
