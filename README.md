@@ -1,5 +1,5 @@
 Run `python train.py --config conf/gaussian_kernel_regression.yaml` for gaussian kernel regression task.
-
+Run `python train.py --config conf/nonlinear_dynamics.yaml` for nonlinear dynamics function.
 
 This repository contains the code and models for our paper:
 
