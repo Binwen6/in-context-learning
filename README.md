@@ -1,111 +1,47 @@
-# In-Context Learning Research Repository
+Run `python train.py --config conf/gaussian_kernel_regression.yaml` for gaussian kernel regression task.
 
-This repository hosts our group research project on in-context learning and related modeling approaches. It is collaboratively maintained by the group members for experimentation, analysis, and paper writing.
 
----
+This repository contains the code and models for our paper:
 
-## 📁 Project Structure
+**What Can Transformers Learn In-Context? A Case Study of Simple Function Classes** <br>
+*Shivam Garg\*, Dimitris Tsipras\*, Percy Liang, Gregory Valiant* <br>
+Paper: http://arxiv.org/abs/2208.01066 <br><br>
+
+![](setting.jpg)
+
+```bibtex
+    @InProceedings{garg2022what,
+        title={What Can Transformers Learn In-Context? A Case Study of Simple Function Classes},
+        author={Shivam Garg and Dimitris Tsipras and Percy Liang and Gregory Valiant},
+        year={2022},
+        booktitle={arXiv preprint}
+    }
 ```
-IN-CONTEXT-LEARNING/
-│
-├── garg/                  # (Example) Experimental results by member Garg
-├── models/                # Shared or baseline model components
-├── src/                   # Source code for utilities, training, evaluation, etc.
-├── nanoGPT/               # NanoGPT-related experiments (if used)
-│
-├── investigation/         # Paper reviews, notes, function classes, etc.
-│   ├── 2208.01066v3.pdf
-│   ├── 2310.10616v1.pdf
-│   └── function_class.md
-│
-├── project proposal/      # LaTeX files for the project writeup
-│   ├── main.tex / .pdf
-│   ├── paper.tex
-│   └── refs.bib
-│
-├── setting.jpg            # Image(s) describing experiment or system setting
-├── environment.yml        # Conda environment definition
-├── LICENSE
-├── Final Project Topics Spring 2025.pdf
-├── .gitignore
-└── README.md              # You’re here!
-```
----
 
-## ⚙️ Getting Started
+## Getting started
+You can start by cloning our repository and following the steps below.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-repo-url/in-context-learning.git
-   cd in-context-learning
+1. Install the dependencies for our code using Conda. You may need to adjust the environment YAML file depending on your setup.
 
+    ```
+    conda env create -f environment.yml
+    conda activate in-context-learning
+    ```
 
-2. **Adding Your Experiments**
+2. Download [model checkpoints](https://github.com/dtsip/in-context-learning/releases/download/initial/models.zip) and extract them in the current directory.
 
-Each member should create a personal directory at the root level of the repository:  `mkdir your_name`
+    ```
+    wget https://github.com/dtsip/in-context-learning/releases/download/initial/models.zip
+    unzip models.zip
+    ```
 
+3. [Optional] If you plan to train, populate `conf/wandb.yaml` with you wandb info.
 
-Inside your directory, you can organize:
-- code
-- checkpoints
-- logs
-- readme / notes
-- visualizations
+That's it! You can now explore our pre-trained models or train your own. The key entry points
+are as follows (starting from `src`):
+- The `eval.ipynb` notebook contains code to load our own pre-trained models, plot the pre-computed metrics, and evaluate them on new data.
+- `train.py` takes as argument a configuration yaml from `conf` and trains the corresponding model. You can try `python train.py --config conf/toy.yaml` for a quick training run.
 
-Example:
-
-![alt text](image.png)
-
-## 🧠 Git Commands for Beginners
-
-### Check current status
-`git status`
-
-### Stage specific file
-`git add yourfile.py`
-
-### Commit your changes
-`git commit -m "Add new experiment in alice/run1"`
-
-### Pull latest changes from remote (important before pushing!)
-`git pull origin main`
-
-### Push your commits to the remote repository
-`git push origin main`
-
-### Create and switch to a new branch (if needed)
-`git checkout -b branch-name`
-
-### Switch back to main branch
-`git checkout main`
-
-> 💡 Always pull (git pull origin main) before pushing your changes to avoid conflicts.
-
-
-
-
-
-
-
-
-
-
----
-
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-
-## ✍️ Contributors
-	•	Binwen Liu
-	•	Quan Yuan
-	•	Peiyu Xu
-	•	Yihong Chen
-
-    
-## 📌 Acknowledgements
-	•	NanoGPT
-	•	ArXiv papers and investigations included in /investigation
-
+# Maintainers
+* [Shivam Garg](https://cs.stanford.edu/~shivamg/)
+* [Dimitris Tsipras](https://dtsipras.com/)
