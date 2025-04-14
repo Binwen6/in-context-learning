@@ -61,6 +61,7 @@ def get_task_sampler(
         "relu_2nn_regression": Relu2nnRegression,
         "decision_tree": DecisionTree,
         "gaussian_kernel_regression": GaussianKernelRegression,
+        "nonlinear_dynamics":NonlinearDynamicalSystem,
     }
     if task_name in task_names_to_classes:
         task_cls = task_names_to_classes[task_name]
@@ -403,3 +404,254 @@ class GaussianKernelRegression(Task):
             "centers": torch.randn(num_tasks, n_centers, n_dims),
             "weights": torch.randn(num_tasks, n_centers),
         }
+        
+class NonlinearDynamicalSystem(Task):
+    def __init__(
+        self,
+        n_dims,
+        batch_size,
+        pool_dict=None,
+        seeds=None,
+        scale=1.0,
+        noise_std=0.0,
+        dynamics_type="poly",
+        center=None,
+    ):
+        super(NonlinearDynamicalSystem, self).__init__(n_dims, batch_size, pool_dict, seeds)
+        self.scale = scale
+        self.noise_std = noise_std
+        self.dynamics_type = dynamics_type
+        
+    def evaluate(self, xs_b):
+        if self.dynamics_type == "poly":
+            return self.poly(xs_b)
+        elif self.dynamics_type == "tanh":
+            return self.tanh(xs_b)
+        elif self.dynamics_type == "logistic":
+            return self.logistic(xs_b)
+        elif self.dynamics_type == "duffling":
+            return self.duffling(xs_b)
+        elif self.dynamics_type == "vdp":
+            return self.vdp(xs_b)
+        elif self.dynamics_type=="lorenz":
+            return self.lorenz(xs_b)
+        else:
+            raise ValueError(f"Unknown dynamics type: {self.dynamics_type}")
+        
+    def poly(self, xs_b):
+        B, L, D = xs_b.shape
+        w1 = torch.randn(B, D, 1, device=xs_b.device)
+        w2 = torch.randn(B, D, 1, device=xs_b.device)
+        w0 = torch.randn(B, 1, device=xs_b.device)  # shape [B, 1]
+        x1 = torch.bmm(xs_b, w1).squeeze(-1)  # [B, L]
+        x2 = torch.bmm(xs_b**2, w2).squeeze(-1)
+        pred = self.scale * (x1 + x2 + w0)  # broadcast [B, 1] + [B, L]
+        return pred
+        
+    def tanh(self, xs_b):
+        B, L, D = xs_b.shape
+        w = torch.randn(B, D, 1, device=xs_b.device)
+        b = torch.randn(B, 1, device=xs_b.device)
+        xw = torch.bmm(xs_b, w).squeeze(-1)  # [B, L]
+        return torch.tanh(xw + b)
+        
+    def logistic(self, xs_b):
+        # logistic activation: y = 1 / (1 + exp(-w·x + b))
+        B, L, D = xs_b.shape
+        w = torch.randn(B, D, 1, device=xs_b.device)
+        b = torch.randn(B, 1, device=xs_b.device)
+        xw = torch.bmm(xs_b, w).squeeze(-1)  # [B, L]
+        return torch.sigmoid(xw + b)  # [B, L]
+        
+    def duffling(self, xs_b):
+        B, L, D = xs_b.shape
+        if D < 2:
+            raise ValueError("Duffling dynamics requires at least 2 dims")
+        x = xs_b[:, :, 0]
+        v = xs_b[:, :, 1]
+        dx = v
+        delta = torch.rand(B, 1, device=xs_b.device) * 0.5 + 0.1
+        alpha = torch.rand(B, 1, device=xs_b.device) * 2.0 + 0.5
+        beta = torch.rand(B, 1, device=xs_b.device) * 1.0 + 0.2
+        dv = -delta * v - alpha * x - beta * x**3
+        return dx + dv  # [B, L]
+        
+    def vdp(self, xs_b):
+        B, L, D = xs_b.shape
+        if D < 2:
+            raise ValueError("VDP dynamics requires at least 2 dims")
+        x = xs_b[:, :, 0]
+        y = xs_b[:, :, 1]
+        dx = y
+        mu = torch.rand(B, 1, device=xs_b.device) * 2.0 + 0.5
+        dy = mu * (1 - x ** 2) * y - x
+        return dx + dy  # [B, L]
+        
+    def lorenz(self, xs_b):
+        B, L, D = xs_b.shape
+        if D < 3:
+            raise ValueError("Lorenz dynamics requires at least 3 dims")
+        x = xs_b[:, :, 0]
+        y = xs_b[:, :, 1]
+        z = xs_b[:, :, 2]
+        sigma = 10.0
+        rho = 28.0
+        beta = 8.0 / 3.0
+        dx = sigma * (y - x)
+        dy = x * (rho - z) - y
+        dz = x * y - beta * z
+        return dx + dy + dz  # [B, L]
+
+    @staticmethod
+    def generate_pool_dict(n_dims, num_tasks, dynamics_type="poly", **kwargs):
+        if dynamics_type == "poly":
+            return {
+                "w0": torch.randn(num_tasks, n_dims, 1),
+                "w1": torch.randn(num_tasks, n_dims, 1),
+                "w2": torch.randn(num_tasks, n_dims, 1)  # 修复了torch.random
+            }
+        elif dynamics_type == "tanh":
+            return {
+                "w": torch.randn(num_tasks, n_dims, 1),
+                "b": torch.randn(num_tasks, n_dims, 1),
+            }
+        elif dynamics_type == "logistic":
+            return {
+                "w": torch.randn(num_tasks, n_dims, 1),
+                "b": torch.randn(num_tasks, 1, 1),
+            }
+        elif dynamics_type == "duffling":
+            return {
+                "delta": torch.rand(num_tasks, 1) * 0.5 + 0.1,   # [0.1, 0.6]
+                "alpha": torch.rand(num_tasks, 1) * 2.0 + 0.5,   # [0.5, 2.5]
+                "beta":  torch.rand(num_tasks, 1) * 1.0 + 0.2,   # [0.2, 1.2]
+            }
+        elif dynamics_type == "vdp":
+            return {
+                "mu": torch.rand(num_tasks, 1),
+            }
+        else:
+            raise ValueError(f"Unknown dynamics type: {dynamics_type}")
+
+    @staticmethod
+    def get_metric():
+        return squared_error
+
+    @staticmethod
+    def get_training_metric():
+        return mean_squared_error
+
+        
+# class NonlinearDynamicalSystem(Task):
+#     def __init__(
+#         self,
+#         n_dims,
+#         batch_size,
+#         pool_dict=None,
+#         seeds=None,
+#         scale=1.0,
+#         noise_std=0.0,
+#         dynamics_type="poly",
+#     ):
+#         super(NonlinearDynamicalSystem, self).__init__(n_dims, batch_size, pool_dict, seeds)
+#         self.scale = scale
+#         self.noise_std = noise_std
+#         self.dynamics_type = dynamics_type
+        
+#     def evaluate(self, xs_b):
+#         return self.dynamics_type(xs_b)
+        
+#     def poly(self,xs_b):
+#         w1=torch.randn(self.b_size, self.n_dims, 1)
+#         w2=torch.randn(self.b_size, self.n_dims, 1)
+#         w0=torch.randn(self.b_size, self.n_dims, 1)
+#         pred=w0+w1@xs_b+w2@(xs_b**2)
+#         return pred
+#     def tanh(self,xs_b):
+#         w=torch.randn(self.b_size, self.n_dims, 1)
+#         b=torch.randn(self.b_size, self.n_dims, 1)
+#         pred=torch.tanh(w@xs_b+b)
+#         return pred
+#     # def exp_sin(self,xs_b):
+#     #     # y = e^(-x^2) * sin(x)
+#     #     pred = torch.exp(-xs_b**2) * torch.sin(xs_b)
+#     #     # pred=pred.sum(dim=-1)
+#     #     return pred
+#     # def trig(self,xs_b):
+#     #     # y = sin(x) + cos(2x)
+#     #     pred = torch.sin(xs_b) + torch.cos(2 * xs_b)
+#     #     # pred=pred.sum(dim=-1)
+#     #     return pred
+#     # def piecewise(self,xs_b):
+#     #     pred = torch.where(xs_b < 0, xs_b, xs_b**2)
+#     #     # pred=pred.sum(dim=-1)
+#     #     return pred
+#     def logistic(self,xs_b):
+#         # logistic activation: y = 1 / (1 + exp(-w·x + b))
+#         w = torch.randn(self.b_size, self.n_dims, 1, device=self.device)
+#         b = torch.randn(self.b_size, 1, 1, device=self.device)
+#         logits = xs_b @ w + b
+#         pred = torch.sigmoid(logits)
+#         return pred[:, :, 0]
+#     def duffling(self,xs_b):
+#         x = xs_b[:, :, 0]
+#         v = xs_b[:, :, 1]
+#         dx = v
+#         delta = torch.rand(self.b_size, 1) * 0.5 + 0.1   # [0.1, 0.6]
+#         alpha = torch.rand(self.b_size, 1) * 2.0 + 0.5   # [0.5, 2.5]
+#         beta  = torch.rand(self.b_size, 1) * 1.0 + 0.2   # [0.2, 1.2]
+#         dv = -delta * v - alpha * x - beta * x ** 3
+#         return torch.stack([dx, dv], dim=-1)
+#     def vdp(self,xs_b):
+#         x = xs_b[:, :, 0]s
+#         y = xs_b[:, :, 1]
+#         dx = y
+#         mu=torch.rand(1) 
+#         dy = mu * (1 - x ** 2) * y - x
+#         return torch.stack([dx, dy], dim=-1)
+
+#     @staticmethod
+#     def generate_pool_dict(n_dims, num_tasks, **kwargs):
+#         if self.dynamics_type=="poly":
+#             return {
+#                 w0=torch.randn(num_tasks,n_dims,1)
+#                 w1=torch.randn(num_tasks,n_dims,1)
+#                 w2=torch.random(num_tasks,n_dims,1)
+#             }
+#         elif self.dynamics_type=="tanh":
+#             return{
+#                 w=torch.randn(num_tasks, self.n_dims, 1),
+#                 b=torch.randn(self.b_size, self.n_dims, 1),
+#             }
+#         # elif self.dynamics_type=="exp_sin":
+#         #     return{}
+#         # elif self.dynamics_type=="trig":
+#         #     return{}
+#         # elif self.dynamics_type=="piecewise":
+#         #     return{}
+#         elif self.dynamics_type=="logistic":
+#             return{
+#                 w = torch.randn(self.b_size, self.n_dims, 1, device=self.device),
+#                 b = torch.randn(self.b_size, 1, 1, device=self.device),
+#             }
+#         elif self.dynamics_type=="duffling":
+#             return{
+#                 delta = torch.rand(self.b_size, 1) * 0.5 + 0.1,   # [0.1, 0.6]
+#         alpha = torch.rand(self.b_size, 1) * 2.0 + 0.5,   # [0.5, 2.5]
+#         beta  = torch.rand(self.b_size, 1) * 1.0 + 0.2,   # [0.2, 1.2]
+#             }
+#         elif self.dynamics_type=="vdp":
+#             return{
+#                 mu=torch.rand(1),
+#             }
+#         else:
+#             raise ValueError("this function type not allowed.")
+
+#     @staticmethod
+#     def get_metric():
+#         return squared_error
+
+#     @staticmethod
+#     def get_training_metric():
+#         return mean_squared_error
+

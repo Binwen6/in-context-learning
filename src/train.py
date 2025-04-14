@@ -37,7 +37,8 @@ def sample_seeds(total_seeds, count):
 
 def train(model, args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.training.learning_rate)
-    curriculum = Curriculum(args.training.curriculum)
+    print("task:",args.training.task)
+    curriculum = Curriculum(args.training.curriculum,args.training.task)
 
     starting_step = 0
     state_path = os.path.join(args.out_dir, "state.pt")
@@ -59,6 +60,7 @@ def train(model, args):
         num_tasks=args.training.num_tasks,
         **args.training.task_kwargs,
     )
+    task_kwargs = args.training.task_kwargs.copy()
     pbar = tqdm(range(starting_step, args.training.train_steps))
 
     num_training_examples = args.training.num_training_examples
@@ -66,7 +68,17 @@ def train(model, args):
     for i in pbar:
         data_sampler_args = {}
         task_sampler_args = {}
-
+        # if "nonlinear_dynamics" in args.training.task:
+        if "nonlinear_dynamic" in args.training.task:
+            current_dynamics_type = curriculum.get_current_dynamics_type()
+            task_kwargs["dynamics_type"] = current_dynamics_type
+            task_sampler = get_task_sampler(
+                args.training.task,
+                n_dims,
+                bsize,
+                num_tasks=args.training.num_tasks,
+                **task_kwargs,
+            )
         if "sparse" in args.training.task:
             task_sampler_args["valid_coords"] = curriculum.n_dims_truncated
         if num_training_examples is not None:
@@ -101,20 +113,37 @@ def train(model, args):
         )
 
         if i % args.wandb.log_every_steps == 0 and not args.test_run:
-            wandb.log(
-                {
-                    "overall_loss": loss,
-                    "excess_loss": loss / baseline_loss,
-                    "pointwise/loss": dict(
-                        zip(point_wise_tags, point_wise_loss.cpu().numpy())
-                    ),
-                    "n_points": curriculum.n_points,
-                    "n_dims": curriculum.n_dims_truncated,
-                },
-                step=i,
-            )
+            # wandb.log(
+            #     {
+            #         "overall_loss": loss,
+            #         "excess_loss": loss / baseline_loss,
+            #         "pointwise/loss": dict(
+            #             zip(point_wise_tags, point_wise_loss.cpu().numpy())
+            #         ),
+            #         "n_points": curriculum.n_points,
+            #         "n_dims": curriculum.n_dims_truncated,
+            #     },
+            #     step=i,
+            # )
+            log_dict = {
+                "overall_loss": loss,
+                "excess_loss": loss / baseline_loss,
+                "pointwise/loss": dict(
+                    zip(point_wise_tags, point_wise_loss.cpu().numpy())
+                ),
+                "n_points": curriculum.n_points,
+                "n_dims": curriculum.n_dims_truncated,
+            }
+            if "nonlinear_dynamic" in args.training.task:
+                log_dict["dynamics_type"] = curriculum.get_current_dynamics_type()
+            wandb.log(log_dict, step=i)
 
         curriculum.update()
+
+        if "nonlinear_dynamic" in args.training.task:
+            pbar.set_description(f"loss {loss} dynamics {curriculum.get_current_dynamics_type()}")
+        else:
+            pbar.set_description(f"loss {loss}")
 
         pbar.set_description(f"loss {loss}")
         if i % args.training.save_every_steps == 0 and not args.test_run:

@@ -41,6 +41,7 @@ TASK_LIST = [
     "relu_2nn_regression",
     "decision_tree",
     "gaussian_kernel_regression",
+    "nonlinear_dynamics",
 ]
 
 training_schema = {
