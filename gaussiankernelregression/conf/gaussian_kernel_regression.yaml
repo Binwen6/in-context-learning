@@ -1,0 +1,18 @@
+inherit: 
+    - base.yaml
+
+training:
+    task: gaussian_kernel_regression
+    task_kwargs: {"center": 10,
+    "noise_std": 0.5}
+    curriculum:
+        points:
+            start: 11
+            end: 41
+            inc: 2
+            interval: 2000
+
+out_dir: ../models/gaussian_kernel_regression
+
+wandb:
+    name: "gaussian_kernel_regression_standard"
