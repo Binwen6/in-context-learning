@@ -79,7 +79,23 @@ def get_relevant_baselines(task_name):
         "nonlinear_dynamics":[
             (LeastSquaresModel, {}),
             (NNModel, {"n_neighbors": 3}),
-            (AveragingModel, {})
+            (AveragingModel, {}),
+            (
+                GDModel,
+                {
+                    "model_class": NeuralNetwork,
+                    "model_class_args": {
+                        "in_size": 20,
+                        "hidden_size": 100,
+                        "out_size": 1,
+                    },
+                    "opt_alg": "adam",
+                    "batch_size": 100,
+                    "lr": 5e-3,
+                    "num_steps": 100,
+                },
+            ),
+            (XGBoostModel, {}),
         ]
     }
 
