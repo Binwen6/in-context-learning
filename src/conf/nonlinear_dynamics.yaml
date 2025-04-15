@@ -9,7 +9,7 @@ training:
     curriculum:
         points:
             start: 11
-            end: 41
+            end: 101
             inc: 2
             interval: 2000
 
